@@ -14,7 +14,7 @@ OVERLAY = function()
 	// http://code.jquery.com/ui/1.10.0/jquery-ui.js
 	function focusable(element) {
 		// Use the defined focusable checker when possible
-		if($.expr[':'].focusable) { return $.expr[':'].focusable; }
+		if($.expr.pseudos.focusable) { return $.expr.pseudos.focusable; }
 
 		var isTabIndexNotNaN = !isNaN($.attr(element, 'tabindex')),
 			nodeName = element.nodeName && element.nodeName.toLowerCase(),
@@ -41,10 +41,10 @@ OVERLAY = function()
 	// Focus inputs using cached focusable elements (see update())
 	function focusInputs(blurElems) {
 		// Blurring body element in IE causes window.open windows to unfocus!
-		if(focusableElems.length < 1 && blurElems.length) { blurElems.not('body').blur(); }
+		if(focusableElems.length < 1 && blurElems.length) { blurElems.not('body').trigger('blur'); }
 
 		// Focus the inputs
-		else { focusableElems.first().focus(); }
+		else { focusableElems.first().trigger('focus'); }
 	}
 
 	// Steal focus from elements outside tooltip
@@ -73,23 +73,23 @@ OVERLAY = function()
 			// Create document overlay
 			elem = self.elem = $('<div />', {
 				id: 'qtip-overlay',
-				html: '<div></div>',
-				mousedown: function() { return FALSE; }
+				html: '<div></div>'
 			})
+			.on('mousedown', function() { return FALSE; })
 			.hide();
 
 			// Make sure we can't focus anything outside the tooltip
-			$(document.body).bind('focusin'+MODALSELECTOR, stealFocus);
+			$(document.body).on('focusin'+MODALSELECTOR, stealFocus);
 
 			// Apply keyboard "Escape key" close handler
-			$(document).bind('keydown'+MODALSELECTOR, function(event) {
+			$(document).on('keydown'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.escape && event.keyCode === 27) {
 					current.hide(event);
 				}
 			});
 
 			// Apply click handler for blur option
-			elem.bind('click'+MODALSELECTOR, function(event) {
+			elem.on('click'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.blur) {
 					current.hide(event);
 				}

@@ -19,7 +19,7 @@ function init(elem, id, opts) {
 
 	// If we don't get an object returned attempt to parse it manualyl without parseJSON
 	/* eslint-disable no-empty */
-	try { html5 = typeof html5 === 'string' ? $.parseJSON(html5) : html5; }
+	try { html5 = typeof html5 === 'string' ? JSON.parse(html5) : html5; }
 	catch(e) {}
 	/* eslint-enable no-empty */
 

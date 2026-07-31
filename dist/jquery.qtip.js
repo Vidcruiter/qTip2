@@ -66,7 +66,7 @@ CLASS_HOVER = NAMESPACE + '-hover',
 CLASS_DISABLED = NAMESPACE+'-disabled',
 
 replaceSuffix = '_replacedByqTip',
-oldtitle = 'oldtitle',
+oldtitle = 'data-oldtitle', // @change - from oldtitle to data-oldtitle to fix WCAG problems.
 trackingBound,
 
 // Browser detection
@@ -681,10 +681,10 @@ PROTOTYPE._createTitle = function()
 	.insertBefore(elements.content)
 
 	// Button-specific events
-	.delegate('.qtip-close', 'mousedown keydown mouseup keyup mouseout', function(event) {
+	.on('mousedown keydown mouseup keyup mouseout', '.qtip-close', function(event) {
 		$(this).toggleClass('ui-state-active ui-state-focus', event.type.substr(-4) === 'down');
 	})
-	.delegate('.qtip-close', 'mouseover mouseout', function(event){
+	.on('mouseover mouseout', '.qtip-close', function(event){
 		$(this).toggleClass('ui-state-hover', event.type === 'mouseover');
 	});
 
@@ -1104,7 +1104,7 @@ PROTOTYPE.toggle = function(state, event) {
 
 			// Autofocus elements if enabled
 			if('string' === typeof opts.autofocus) {
-				$(this.options.show.autofocus, tooltip).focus();
+				$(this.options.show.autofocus, tooltip).trigger('focus');
 			}
 
 			// If set, hide tooltip when inactive for delay period
@@ -1252,7 +1252,7 @@ PROTOTYPE.enable = function() { return this.disable(FALSE); };
 	// Create button and setup attributes
 	elements.button.appendTo(elements.titlebar || tooltip)
 		.attr('role', 'button')
-		.click(function(event) {
+		.on('click', function(event) {
 			if(!tooltip.hasClass(CLASS_DISABLED)) { self.hide(event); }
 			return FALSE;
 		});
@@ -1384,21 +1384,22 @@ PROTOTYPE._storeMouse = function(event) {
 PROTOTYPE._bind = function(targets, events, method, suffix, context) {
 	if(!targets || !method || !events.length) { return; }
 	var ns = '.' + this._id + (suffix ? '-'+suffix : '');
-	$(targets).bind(
+	$(targets).on(
 		(events.split ? events : events.join(ns + ' ')) + ns,
 		$.proxy(method, context || this)
 	);
 	return this;
 };
 PROTOTYPE._unbind = function(targets, suffix) {
-	targets && $(targets).unbind('.' + this._id + (suffix ? '-'+suffix : ''));
+	targets && $(targets).off('.' + this._id + (suffix ? '-'+suffix : ''));
 	return this;
 };
 
 // Global delegation helper
 function delegate(selector, events, method) {
-	$(document.body).delegate(selector,
+	$(document.body).on(
 		(events.split ? events : events.join('.'+NAMESPACE + ' ')) + '.'+NAMESPACE,
+		selector,
 		function() {
 			var api = QTIP.api[ $.attr(this, ATTR_ID) ];
 			api && !api.disabled && method.apply(api, arguments);
@@ -1564,7 +1565,9 @@ PROTOTYPE._assignEvents = function() {
 				enabled = this.rendered && !this.tooltip.hasClass(CLASS_DISABLED) && this.tooltip[0].offsetWidth > 0,
 				isAncestor = elem.parents(SELECTOR).filter(this.tooltip[0]).length > 0;
 
-			if(elem[0] !== this.target[0] && elem[0] !== this.tooltip[0] && !isAncestor &&
+			var isDropdown = elem.parents('.ts-dropdown').length > 0;
+
+			if(elem[0] !== this.target[0] && elem[0] !== this.tooltip[0] && !isDropdown && !isAncestor &&
 				!this.target.has(elem[0]).length && enabled
 			) {
 				this.hide(event);
@@ -1721,7 +1724,7 @@ function init(elem, id, opts) {
 
 	// If we don't get an object returned attempt to parse it manualyl without parseJSON
 	/* eslint-disable no-empty */
-	try { html5 = typeof html5 === 'string' ? $.parseJSON(html5) : html5; }
+	try { html5 = typeof html5 === 'string' ? JSON.parse(html5) : html5; }
 	catch(e) {}
 	/* eslint-enable no-empty */
 
@@ -2664,7 +2667,7 @@ OVERLAY = function()
 	// http://code.jquery.com/ui/1.10.0/jquery-ui.js
 	function focusable(element) {
 		// Use the defined focusable checker when possible
-		if($.expr[':'].focusable) { return $.expr[':'].focusable; }
+		if($.expr.pseudos.focusable) { return $.expr.pseudos.focusable; }
 
 		var isTabIndexNotNaN = !isNaN($.attr(element, 'tabindex')),
 			nodeName = element.nodeName && element.nodeName.toLowerCase(),
@@ -2691,10 +2694,10 @@ OVERLAY = function()
 	// Focus inputs using cached focusable elements (see update())
 	function focusInputs(blurElems) {
 		// Blurring body element in IE causes window.open windows to unfocus!
-		if(focusableElems.length < 1 && blurElems.length) { blurElems.not('body').blur(); }
+		if(focusableElems.length < 1 && blurElems.length) { blurElems.not('body').trigger('blur'); }
 
 		// Focus the inputs
-		else { focusableElems.first().focus(); }
+		else { focusableElems.first().trigger('focus'); }
 	}
 
 	// Steal focus from elements outside tooltip
@@ -2723,23 +2726,23 @@ OVERLAY = function()
 			// Create document overlay
 			elem = self.elem = $('<div />', {
 				id: 'qtip-overlay',
-				html: '<div></div>',
-				mousedown: function() { return FALSE; }
+				html: '<div></div>'
 			})
+			.on('mousedown', function() { return FALSE; })
 			.hide();
 
 			// Make sure we can't focus anything outside the tooltip
-			$(document.body).bind('focusin'+MODALSELECTOR, stealFocus);
+			$(document.body).on('focusin'+MODALSELECTOR, stealFocus);
 
 			// Apply keyboard "Escape key" close handler
-			$(document).bind('keydown'+MODALSELECTOR, function(event) {
+			$(document).on('keydown'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.escape && event.keyCode === 27) {
 					current.hide(event);
 				}
 			});
 
 			// Apply click handler for blur option
-			elem.bind('click'+MODALSELECTOR, function(event) {
+			elem.on('click'+MODALSELECTOR, function(event) {
 				if(current && current.options.show.modal.blur) {
 					current.hide(event);
 				}
@@ -3016,7 +3019,7 @@ $.extend(TRUE, QTIP.defaults, {
 	viewportWidth = viewport[0] === window ? viewport.width() : viewport.outerWidth(FALSE);
 	viewportHeight = viewport[0] === window ? viewport.height() : viewport.outerHeight(FALSE);
 	viewportScroll = { left: fixed ? 0 : viewport.scrollLeft(), top: fixed ? 0 : viewport.scrollTop() };
-	viewportOffset = viewport.offset() || adjusted;
+	viewportOffset = viewport[0] !== window && viewport.offset() || adjusted;
 
 	// Generic calculation method
 	function calculate(side, otherSide, type, adjustment, side1, side2, lengthName, targetLength, elemLength) {

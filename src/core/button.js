@@ -30,7 +30,7 @@ PROTOTYPE._createButton = function()
 	// Create button and setup attributes
 	elements.button.appendTo(elements.titlebar || tooltip)
 		.attr('role', 'button')
-		.click(function(event) {
+		.on('click', function(event) {
 			if(!tooltip.hasClass(CLASS_DISABLED)) { self.hide(event); }
 			return FALSE;
 		});

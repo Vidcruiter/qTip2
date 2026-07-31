@@ -39,7 +39,7 @@ CLASS_HOVER = NAMESPACE + '-hover',
 CLASS_DISABLED = NAMESPACE+'-disabled',
 
 replaceSuffix = '_replacedByqTip',
-oldtitle = 'oldtitle',
+oldtitle = 'data-oldtitle', // @change - from oldtitle to data-oldtitle to fix WCAG problems.
 trackingBound,
 
 // Browser detection

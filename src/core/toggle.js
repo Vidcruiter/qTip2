@@ -108,7 +108,7 @@ PROTOTYPE.toggle = function(state, event) {
 
 			// Autofocus elements if enabled
 			if('string' === typeof opts.autofocus) {
-				$(this.options.show.autofocus, tooltip).focus();
+				$(this.options.show.autofocus, tooltip).trigger('focus');
 			}
 
 			// If set, hide tooltip when inactive for delay period
